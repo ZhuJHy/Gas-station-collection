@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.tulan.system.mapper.pc.PcCarMapper">
+
+    <sql id="select">
+        select c_id,
+               car_name,
+               car_number,
+               car_age,
+               car_director,
+               car_repair,
+               car_status,
+               operations,
+               car_service,
+               risk_car_id,
+               trailer_id,
+               tank_use_id,
+               create_time
+        from sys_car
+    </sql>
+    <!--    车辆条件查询-->
+    <select id="selectCar" parameterType="string" resultType="com.tulan.system.common.resp.pc.PcCarDto">
+        <include refid="select"></include>
+        <where>
+            <if test="carName != null">
+                and car_name  like concat('%',#{carName},'%')
+            </if>
+            <if test="carNumber != null">
+                and car_number  like concat('%',#{carNumber},'%')
+            </if>
+            <if test="carStatus != null">
+                and car_status = #{carStatus}
+            </if>
+            and delete_time is null
+        </where>
+        ORDER BY create_time DESC
+    </select>
+
+    <!--    车辆详情-->
+    <select id="carDetail" parameterType="integer" resultType="com.tulan.system.common.resp.pc.PcCarDetailDto">
+        select c_id,
+               car_name,
+               car_number,
+               car_age,
+               car_director,
+               car_repair,
+               car_status,
+               operations,
+               car_service,
+               risk_car_id,
+               trailer_id,
+               tank_use_id,
+               create_time
+        from sys_car
+        <where>
+        <if test="cId != null">
+            and c_id = #{cId}
+        </if>
+        <if test="carNumber != null">
+            and car_number = #{carNumber}
+        </if>
+            and delete_time is null;
+        </where>
+    </select>
+
+    <!--    查询车辆所绑定气站-->
+    <select id="selectGas" parameterType="integer" resultType="com.tulan.system.common.resp.pc.PcCarGasDto">
+        select gas.gas_name as gas_name, car.gas_id as gas_id, car.gc_id as gc_id
+        from sys_gas_station as gas,
+             sys_gas_car as car
+        where car.c_id = #{cId}
+          and gas.gas_id = car.gas_id
+          and gas.delete_time is null
+    </select>
+
+    <!--    修改车辆信息-->
+    <update id="updateCar">
+        update sys_car
+        set
+        <if test="car.carName != null and car.carName != ''">car_name    = #{car.carName},</if>
+        <if test="car.carNumber != null and car.carNumber != ''">car_number  = #{car.carNumber},</if>
+        <if test="car.carStatus != null and car.carStatus != ''">car_status = #{car.carStatus},</if>
+        <if test="car.riskCarId != null and car.riskCarId != ''">risk_car_id = #{car.riskCarId},</if>
+        <if test="car.trailerId != null and car.trailerId != ''">trailer_id = #{car.trailerId},</if>
+        <if test="car.tankUseId != null and car.tankUseId != ''">tank_use_id = #{car.tankUseId},</if>
+        <if test="date != null and date != ''">update_time = #{date}</if>
+        where c_id = #{car.cId}
+    </update>
+
+<!--    添加车辆信息-->
+    <insert id="addCar">
+        insert into sys_car (
+        <if test="car.carName != null and car.carName != ''">car_name,</if>
+        <if test="car.carNumber != null and car.carNumber != ''">car_number,</if>
+        <if test="car.carStatus != null and car.carStatus != ''">car_status,</if>
+        <if test="car.riskCarId != null and car.riskCarId != ''">risk_car_id,</if>
+        <if test="car.trailerId != null and car.trailerId != ''">trailer_id,</if>
+        <if test="car.tankUseId != null and car.tankUseId != ''">tank_use_id,</if>
+        <if test="date != null and date != ''">create_time</if>
+        )
+        values (
+        <if test="car.carName != null and car.carName != ''">#{car.carName},</if>
+        <if test="car.carNumber != null and car.carNumber != ''">#{car.carNumber},</if>
+        <if test="car.carStatus != null and car.carStatus != ''">#{car.carStatus},</if>
+        <if test="car.riskCarId != null and car.riskCarId != ''">#{car.riskCarId},</if>
+        <if test="car.trailerId != null and car.trailerId != ''">#{car.trailerId},</if>
+        <if test="car.tankUseId != null and car.tankUseId != ''">#{car.tankUseId},</if>
+        <if test="date != null and date != ''">#{date}</if>
+        )
+    </insert>
+
+<!--    逻辑删除车辆信息-->
+    <update id="deleteCar">
+        update sys_car set delete_time = #{date} where c_id in
+        <foreach collection="cId" item="cId" open="(" separator="," close=")">
+            #{cId}
+        </foreach>
+    </update>
+
+<!--    解绑绑定气站-->
+    <delete id="delCarGas">
+        delete from sys_gas_car where gas_id = #{gasId} where c_id = #{cId}
+    </delete>
+
+<!--    删除所以与车辆绑定的-->
+    <delete id="delCarS">
+        delete from sys_gas_car where c_id in
+        <foreach collection="cId" item="cId" open="(" separator="," close=")">
+            #{cId}
+        </foreach>
+    </delete>
+
+<!--    修改车辆状态-->
+    <update id="updateCarStatus">
+        update sys_car set car_status = #{status} where car_number = #{carNumber}
+    </update>
+
+    <update id="updateCarOther">
+        update sys_car
+        <set>
+            risk_car_id = #{RiskCarId},
+            tank_use_id = #{tankUseId},
+            trailer_id = #{trailerId}
+        </set>
+        where car_number = #{carNumber}
+    </update>
+
+</mapper>

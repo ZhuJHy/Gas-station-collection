@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.tulan.system.mapper.pc.PcGasStationMapper">
+    <!--  添加气站-->
+    <insert id="addGas" parameterType="com.tulan.system.common.vo.pc.AddGasVo">
+        insert
+        into sys_gas_station (gas_id, gas_name, gas_province, gas_address, gas_director, gas_phone, gas_status, license,
+                              permit, permission, create_time)
+        values (#{g_id}, #{addGas.gasName}, #{addGas.gasProvince}, #{addGas.gasAddress}, #{addGas.gasDirector},
+                #{addGas.gasPhone}, #{addGas.gasStatus}, #{addGas.license}, #{addGas.permit}, #{addGas.permission},
+                #{c_time})
+    </insert>
+
+    <!--    查询气站名称-->
+    <select id="selectName" parameterType="string" resultType="java.lang.String">
+        select gas_id
+        from sys_gas_station
+        where gas_name = #{gasName}
+          and delete_time is null
+    </select>
+
+    <!--    查询气站列表-->
+    <select id="selectGas" resultType="com.tulan.system.common.resp.pc.PcGasDto">
+        select gas_id,gas_name,gas_province,gas_address,gas_director,gas_phone,gas_status
+        from sys_gas_station
+        <where>
+            <if test="state != null">
+                and gas_status = #{state}
+            </if>
+            <if test="gasName != null">
+                and gas_name like concat('%',#{gasName},'%')
+            </if>
+            and delete_time is null
+        </where>
+        ORDER BY create_time DESC
+    </select>
+
+    <!--    查询气站详情-->
+    <select id="selectDetail" parameterType="string" resultType="com.tulan.system.common.resp.pc.PcGasDetailDto">
+        select gas_id,gas_name,gas_province,gas_address,gas_director,gas_phone,gas_status,license,permit,permission,create_time
+        from sys_gas_station
+        where gas_id = #{gasId}
+          and delete_time is null
+    </select>
+
+    <!--    查询气站车辆-->
+    <select id="selectCar" parameterType="string" resultType="com.tulan.system.common.resp.pc.PcCarDto">
+        select car.c_id         as c_id,
+               car.car_name     as car_name,
+               car.car_number   as car_number,
+               car.car_director as car_director,
+               car.risk_car_id as risk_car_id,
+               car.trailer_id as trailer_id,
+               car.tank_use_id as tank_use_id,
+               car.car_status   as car_status
+        from sys_car as car,
+             sys_gas_car as gas
+        where gas.gas_id = #{gasId}
+          and car.c_id = gas.c_id
+          and car.delete_time is null;
+    </select>
+
+
+    <!--    查询气站司机-->
+    <select id="selectDriver" parameterType="string" resultType="com.tulan.system.common.resp.pc.PcDriverDto">
+        select d.d_id           as d_id
+             , d.driver_name    as driver_name
+             , d.driver_phone   as driver_phone
+             , d.driver_age     as driver_age
+             , d.escort_station as escort_station
+             , d.driver_post    as driver_post
+             , d.driver_license as driver_license
+        from sys_driver as d,
+             sys_gas_driver as gas
+        <where>
+        <if test="gasId != null">
+            and gas.gas_id = #{gasId}
+        </if>
+        <if test="status != null">
+            and d.escort_station = #{status}
+        </if>
+            and d.d_id = gas.d_id
+            and d.delete_time is null
+        </where>
+
+    </select>
+    <!--    气站修改-->
+    <update id="updateGas">
+        update sys_gas_station
+        set gas_name     = #{updateGas.gasName},
+            gas_province = #{updateGas.gasProvince},
+            gas_address  = #{updateGas.gasAddress},
+            gas_director = #{updateGas.gasDirector},
+            gas_phone    = #{updateGas.gasPhone},
+            gas_status   = #{updateGas.gasStatus},
+            license      = #{updateGas.license},
+            permit       = #{updateGas.permit},
+            permission   = #{updateGas.permission},
+            update_time  = #{date}
+        where gas_id = #{updateGas.gasId}
+          and delete_time is null
+    </update>
+
+    <!--    逻辑删除气站-->
+    <delete id="deleteGas">
+        update sys_gas_station set delete_time = #{date} where gas_id in
+        <foreach collection="gasId" item="gasId" open="(" separator="," close=")">
+            #{gasId}
+        </foreach>
+    </delete>
+
+    <!--    删除气站关联车辆-->
+    <delete id="deleteGasCar">
+        delete from sys_gas_car where gas_id in
+        <foreach collection="gasId" item="gasId" open="(" separator="," close=")">
+            #{gasId}
+        </foreach>
+    </delete>
+
+    <!--    删除气站关联司机-->
+    <delete id="deleteGasDriver">
+        delete from sys_gas_driver where gas_id in
+        <foreach collection="gasId" item="gasId" open="(" separator="," close=")">
+            #{gasId}
+        </foreach>
+    </delete>
+
+    <update id="deleteMessenger">
+        update sys_messenger set gas_id   = '',gas_name = '',m_status = 0 ,open_id = '',m_power = 1 where gas_id in
+        <foreach collection="gasId" item="gasId" open="(" separator="," close=")">
+            #{gasId}
+        </foreach>
+    </update>
+
+</mapper>

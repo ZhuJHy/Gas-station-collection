@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.tulan.system.mapper.pc.PcFactoryMapper">
+
+    <sql id="selectFactory">
+        select factory_id,
+               factory_name,
+               factory_province,
+               factory_address,
+               factory_aura,
+               factory_capacity,
+               factory_director,
+               factory_phone,
+               factory_details,
+               factory_band,
+               factory_price,
+               factory_state,
+               create_time,
+               update_time
+        from sys_factory
+    </sql>
+    <!--条件查询列表-->
+    <select id="lfSelect" parameterType="com.tulan.system.common.vo.pc.FactoryVo"
+            resultType="com.tulan.system.common.resp.pc.PcFactoryDto">
+        <include refid="selectFactory"></include>
+        <where>
+            <if test="factoryState != null">
+                and factory_state = #{factoryState}
+            </if>
+            <if test="factoryName != null">
+                and factory_name like concat('%',#{factoryName},'%')
+            </if>
+            <if test="factoryProvince != null">
+                and factory_province like concat('%',#{factoryProvince},'%')
+            </if>
+            <if test="factoryAddress != null">
+                and factory_address like concat('%',#{factoryAddress},'%')
+            </if>
+            and delete_time is null
+        </where>
+        ORDER BY create_time DESC
+    </select>
+    <!--    液厂详情查询-->
+    <select id="selectDetail" parameterType="string" resultType="com.tulan.system.common.resp.pc.PcFactoryDetailDto">
+        <include refid="selectFactory"></include>
+        <where>
+            <if test="factoryId != null">
+                and factory_id = #{factoryId}
+            </if>
+            and delete_time is null
+        </where>
+    </select>
+    <!--    添加液厂-->
+    <insert id="addFactory" parameterType="com.tulan.system.common.vo.pc.AddFactoryVo">
+        replace into sys_factory (
+            factory_id,
+            factory_name,
+            factory_province,
+            factory_address,
+            factory_aura,
+            factory_capacity,
+            factory_director,
+            factory_phone,
+            factory_details,
+            factory_band,
+            factory_price,
+            factory_state,
+            create_time)
+            values (#{id},
+        #{add.factoryName},
+        #{add.factoryProvince},
+        #{add.factoryAddress},
+        #{add.factoryAura},
+        #{add.factoryCapacity},
+        #{add.factoryDirector},
+        #{add.factoryPhone},
+        #{add.factoryDetails},
+        #{add.factoryBand},
+        #{add.factoryPrice},
+        #{add.factoryState},
+        #{date}
+        )
+    </insert>
+    <!--    根据名称查液厂-->
+    <select id="selectName" parameterType="string" resultType="java.lang.String">
+        select factory_id
+        from sys_factory
+        where factory_name = #{factoryName}
+          and delete_time is null
+    </select>
+
+    <update id="updateFactory" parameterType="com.tulan.system.common.vo.pc.UpdateFactoryVo">
+        update sys_factory
+        set factory_name     = #{update.factoryName},
+            factory_province = #{update.factoryProvince},
+            factory_address  = #{update.factoryAddress},
+            factory_aura     = #{update.factoryAura},
+            factory_capacity = #{update.factoryCapacity},
+            factory_director = #{update.factoryDirector},
+            factory_phone    = #{update.factoryPhone},
+            factory_details  = #{update.factoryDetails},
+            factory_band     = #{update.factoryBand},
+            factory_price    = #{update.factoryPrice},
+            factory_state    = #{update.factoryState},
+            update_time      = #{date}
+        where factory_id = #{update.factoryId}
+    </update>
+
+<!--    查询液厂标签-->
+    <select id="selectLabel" parameterType="string" resultType="com.tulan.system.entity.Label">
+        select label_id, label_name, factory_id
+        from sys_label
+        where factory_id = #{factoryId}
+    </select>
+
+<!--    更改液厂状态-->
+    <update id="updateState">
+        update sys_factory
+        set factory_state = #{factoryState}
+        where factory_id = #{factoryId}
+    </update>
+
+<!--    添加液厂标签-->
+    <insert id="addLabel" >
+        insert into sys_label (label_name,factory_id) values (#{label},#{factoryId})
+    </insert>
+<!--    修改液厂标签-->
+    <update id="updateLabel" >
+        update sys_label set label_name = #{label} where label_id = #{labelId}
+    </update>
+<!--    删除液厂某个标签-->
+    <delete id="deleteLabel" >
+        delete from sys_label where label_id = #{labelId}
+    </delete>
+<!--    删除液厂全部标签-->
+    <delete id="delFactoryLabel">
+        delete from sys_label where factory_id in
+        <foreach collection="factoryId" item="factoryId" open="(" separator="," close=")">
+            #{factoryId}
+        </foreach>
+    </delete>
+<!--    逻辑删除液厂-->
+        <update id="deleteFactory" parameterType="string">
+            update sys_factory set delete_time = #{date} where factory_id in
+            <foreach collection="factoryId" item="factoryId" open="(" separator="," close=")">
+                #{factoryId}
+            </foreach>
+        </update>
+
+</mapper>

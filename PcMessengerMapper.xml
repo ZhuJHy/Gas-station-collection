@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.tulan.system.mapper.pc.PcMessengerMapper">
+
+    <sql id="select">
+        select m_id, mg_id, m_name, m_phone, gas_id, gas_name,m_status, m_power
+        from sys_messenger
+    </sql>
+
+<!--    查询信息员列表-->
+    <select id="selectList" parameterType="string" resultType="com.tulan.system.api.domain.Messenger">
+        <include refid="select"></include>
+        <where>
+            <if test="mesName != null">
+                and m_name like concat('%',#{mesName},'%')
+            </if>
+            <if test="phone != null">
+                and m_phone like concat('%',#{phone},'%')
+            </if>
+            and delete_time is null
+        </where>
+        ORDER BY create_time DESC
+    </select>
+
+<!--    查询信息员详细-->
+    <select id="messengerDetail" parameterType="string" resultType="com.tulan.system.common.resp.pc.PcMessengerDetailDto">
+        <include refid="select"></include>
+        <where>
+            and mg_id = #{mgId}
+        </where>
+    </select>
+
+<!--    添加信息员-->
+    <insert id="addMessenger">
+        insert into sys_messenger (mg_id, m_name, m_phone,gas_id,gas_name,m_status,m_power,create_time)
+        values (#{mgId},
+                #{addMg.mName},
+                #{addMg.mPhone},
+                #{addMg.gasId},
+                #{addMg.gasName},
+                #{addMg.mStatus},
+                1,
+                #{date})
+    </insert>
+
+<!--    更改信息员-->
+    <update id="updateMessenger">
+        update sys_messenger
+        set m_name      = #{upMg.mName},
+            m_phone     = #{upMg.mPhone},
+            gas_id      = #{upMg.gasId},
+            gas_name    = #{upMg.gasName},
+            m_status     = #{upMg.mStatus},
+            m_power     = 1,
+            update_time = #{date}
+        where mg_id = #{upMg.mgId}
+    </update>
+
+<!--    解绑信息员-->
+    <update id="untieMessenger">
+        update sys_messenger
+        set gas_id  = '',
+            gas_name  = '',
+            m_status = 0,
+            m_power = 1
+        where mg_id = #{mgId}
+    </update>
+
+<!--    查询手机号-->
+    <select id="selPhone" parameterType="string" resultType="string">
+        select m_phone from sys_messenger where m_phone = #{mPhone} and delete_time is null
+    </select>
+
+    <!--    逻辑删除信息员-->
+    <update id="deleteMes">
+        update sys_messenger set delete_time = #{date}, m_power = '-1' where mg_id in
+        <foreach collection="mgId" item="mgId" open="(" separator="," close=")">
+            #{mgId}
+        </foreach>
+    </update>
+
+<!--    启用禁用信用员-->
+    <update id="updateStatus">
+        update sys_messenger set m_status = #{status} where mg_id = #{mgId}
+    </update>
+
+<!--   检索气站 -->
+    <select id="selectGas" parameterType="string" resultType="com.tulan.system.common.resp.pc.PcSelectGasDto">
+        select gas_id ,gas_name from sys_gas_station
+        <where>
+            <if test="gasName != null">
+                and gas_name like concat('%',#{gasName},'%')
+            </if>
+            <if test="gasId != null">
+                and gas_id = #{gasId}
+            </if>
+                and delete_time is null
+        </where>
+    </select>
+
+<!--  根据姓名查气站Id-->
+    <select id="selectGasId" parameterType="string" resultType="string">
+        select gas_id from sys_gas_station
+        <where>
+            <if test="gasName != null">
+                and gas_name = #{gasName}
+            </if>
+        </where>
+    </select>
+
+</mapper>

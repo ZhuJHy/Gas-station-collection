@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.tulan.system.mapper.pc.PcDriverMapper">
+
+    <!--    查询司机列表-->
+    <select id="selectDriver" parameterType="string" resultType="com.tulan.system.common.resp.pc.PcDriverDto">
+        select d_id,driver_name,driver_phone,driver_age,escort_station,driver_post,driver_license
+        from sys_driver
+        <where>
+            <if test="driName != null">
+                and driver_name like concat('%',#{driName},'%')
+            </if>
+            <if test="phone != null">
+                and driver_phone like concat('%',#{phone},'%')
+            </if>
+            <if test="escortStation != null">
+                and escort_station = #{escortStation}
+            </if>
+            and delete_time is null
+        </where>
+        ORDER BY create_time DESC
+    </select>
+
+    <!--    查询司机详情-->
+    <select id="driverDetail" parameterType="string" resultType="com.tulan.system.common.resp.pc.PcDriverDetailDto">
+        select d_id,
+               driver_name,
+               driver_phone,
+               driver_age,
+               escort_station,
+               driver_post,
+               driver_card,
+               driver_license,
+               driver_card,
+               car_number,
+               create_time
+        from sys_driver
+        where d_id = #{dId}
+          and delete_time is null
+    </select>
+
+    <!--    查询司机所在气站-->
+    <select id="driGas" parameterType="string" resultType="com.tulan.system.common.resp.pc.PcDriverGasDto">
+        select dri.gd_id, gas.gas_id, gas.gas_name
+        from sys_gas_driver as dri,
+             sys_gas_station as gas
+        where dri.gas_id = gas.gas_id
+          and gas.delete_time is null
+          and dri.d_id = #{dId}
+    </select>
+
+
+    <!--    添加司机-->
+    <insert id="addDriver">
+        insert into sys_driver (
+        <if test="dri.driverName != null and dri.driverName != ''">driver_name,</if>
+        <if test="dri.driverPhone!= null and dri.driverPhone != ''">driver_phone,</if>
+        <if test="dri.driverAge!= null and dri.driverAge != ''">driver_age,</if>
+        <if test="dri.escortStation!= null and dri.escortStation != ''">escort_station,</if>
+        <if test="dri.driverPost!= null and dri.driverPost != ''">driver_post,</if>
+        <if test="dri.driverCard!=null and dri.driverCard != ''">driver_card,</if>
+        <if test="dri.driverLicense!= null and dri.driverLicense != ''">driver_license,</if>
+        <if test="dri.carNumber!= null and dri.carNumber != ''">car_number,</if>
+        <if test="date!= null and date != ''">create_time</if>
+        )
+        values (
+                <if test="dri.driverName != null and dri.driverName != ''">#{dri.driverName},</if>
+        <if test="dri.driverPhone!= null and dri.driverPhone != ''">#{dri.driverPhone},</if>
+        <if test="dri.driverAge!= null and dri.driverAge != ''"> #{dri.driverAge},</if>
+        <if test="dri.escortStation!= null and dri.escortStation != ''">#{dri.escortStation},</if>
+        <if test="dri.driverPost!= null and dri.driverPost != ''">#{dri.driverPost},</if>
+        <if test="dri.driverCard!=null and dri.driverCard != ''">#{dri.driverCard},</if>
+        <if test="dri.driverLicense!= null and dri.driverLicense != ''">#{dri.driverLicense},</if>
+        <if test="dri.carNumber!= null and dri.carNumber != ''">#{dri.carNumber},</if>
+        <if test="date!= null and date != ''">#{date}</if>
+        )
+    </insert>
+
+    <!--    更新司机信息-->
+    <update id="updateDriver">
+        update sys_driver
+        set
+        <if test="dri.driverName != null and dri.driverName != ''">driver_name = #{dri.driverName},</if>
+        <if test="dri.driverPhone != null and dri.driverPhone != ''">driver_phone = #{dri.driverPhone},</if>
+        <if test="dri.driverAge != null and dri.driverAge != ''">driver_age = #{dri.driverAge},</if>
+        <if test="dri.escortStation != null and dri.escortStation != ''">escort_station = #{dri.escortStation},</if>
+        <if test="date != null and date != ''">update_time = #{date}</if>
+        where d_id = #{dri.dId}
+    </update>
+
+    <!--    逻辑删除司机-->
+    <update id="deleteDriver">
+        update sys_driver set delete_time = #{date} where d_id in
+        <foreach collection="dId" item="dId" open="(" separator="," close=")">
+            #{dId}
+        </foreach>
+    </update>
+
+    <!--    删除司机绑定的所以气站-->
+    <delete id="delDriverS">
+        delete from sys_gas_driver where d_id in
+        <foreach collection="dId" item="dId" open="(" separator="," close=")">
+            #{dId}
+        </foreach>
+    </delete>
+
+    <!--    解绑司机与气站-->
+    <delete id="delGasDriver">
+        delete
+        from sys_gas_driver
+        where d_id = #{dId}
+          and gas_id = #{gasId}
+    </delete>
+
+    <update id="updateDriverStatus">
+        update sys_driver
+        set escort_station = #{status}
+        where driver_phone = #{driverPhone}
+    </update>
+
+    <update id="updateCar">
+        update sys_driver
+        set car_number = ''
+        where driver_phone = #{driverPhone}
+    </update>
+
+    <!--    查询司机身份证号-->
+    <select id="selectDriverCard" parameterType="string" resultType="com.tulan.system.common.resp.pc.PcDriverDetailDto">
+        select d_id,
+               driver_name,
+               driver_phone,
+               driver_age,
+               escort_station,
+               driver_post,
+               driver_license,
+               driver_card,
+               car_number,
+               create_time
+        from sys_driver
+        where driver_phone = #{driverPhone}
+          and delete_time is null
+    </select>
+
+
+</mapper>

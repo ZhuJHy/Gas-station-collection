@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.tulan.system.mapper.pc.PcPlanMapper">
+
+    <sql id="dateSelect">
+        select p_id,
+               plan_id,
+               gas_id,
+               gas_name,
+               factory_name,
+               address,
+               time_start,
+               time_end,
+               buy_number,
+               car_number,
+               driver,
+               driver_phone,
+               escort,
+               escort_phone,
+               traffic_unit,
+               status,
+               plan_signature,
+               create_time
+        from sys_plan
+    </sql>
+
+
+    <!--    查询列表-->
+    <select id="selectList" resultType="com.tulan.system.common.resp.pc.PcPlanDto">
+        select
+        p_id,plan_id,gas_name,gas_address,factory_name,address,time_start,time_end,driver,escort,buy_number,status,plan_signature,create_time
+        from sys_plan
+        <where>
+            <if test="plan.gasName != null">
+                and gas_name like concat('%',#{plan.gasName},'%')
+            </if>
+            <if test="plan.gasAddress != null">
+                and gas_address like concat('%',#{plan.gasAddress},'%')
+            </if>
+            <if test="plan.factoryName != null">
+                and factory_name like concat('%',#{plan.factoryName},'%')
+            </if>
+            <if test="plan.address != null">
+                and address like concat('%',#{plan.address},'%')
+            </if>
+            <if test="plan.driver != null">
+                and driver like concat('%',#{plan.driver},'%')
+            </if>
+            <if test="plan.escort != null">
+                and escort like concat('%',#{plan.escort},'%')
+            </if>
+            <if test="star != null and star != ''">
+                <![CDATA[and DATE_FORMAT(create_time, '%Y-%m-%d')>= DATE_FORMAT(#{star},'%Y-%m-%d' )]]>
+            </if>
+            <if test="end  != null and end != ''">
+                <![CDATA[and DATE_FORMAT(create_time, '%Y-%m-%d')<= DATE_FORMAT(#{end} ,'%Y-%m-%d' )]]>
+            </if>
+            <if test="plan.status != null">
+                and status = #{plan.status}
+            </if>
+        </where>
+        ORDER BY create_time DESC
+    </select>
+
+    <!--    订单详情-->
+    <select id="selectDetail" parameterType="string" resultType="com.tulan.system.common.resp.pc.PlanDetailDto">
+        <include refid="dateSelect"></include>
+        <where>
+            and plan_id = #{planId} and delete_time is null
+        </where>
+
+    </select>
+
+    <!--    订单签字-->
+    <update id="signature">
+        update sys_plan
+        set plan_signature = #{signature}
+        where plan_id = #{planId}
+    </update>
+
+    <!--    签字后修改状态-->
+    <update id="updateStatus">
+        update sys_plan
+        set status = #{status}
+        where plan_id = #{planId}
+    </update>
+
+    <update id="updatePlan" >
+        update sys_plan
+        set
+            factory_name = #{updatePlan.factoryName},
+            address = #{updatePlan.address},
+            driver = #{updatePlan.driver},
+            driver_phone = #{updatePlan.driverPhone},
+            escort  =  #{updatePlan.escort},
+            escort_phone = #{updatePlan.escortPhone},
+            car_number = #{updatePlan.carNumber},
+            time_start = #{updatePlan.timeStart},
+            time_end = #{updatePlan.timeEnd},
+            buy_number = #{updatePlan.buyNumber},
+            traffic_unit = #{updatePlan.trafficUnit},
+            status = #{updatePlan.status},
+            update_time = #{date}
+        where plan_id = #{updatePlan.planId}
+    </update>
+
+    <update id="updatePlanOther">
+        update sys_plan
+        <set>
+            risk_car_id = #{riskCarId},
+            tank_use_id = #{tankUseId},
+            trailer_id = #{trailerId}
+        </set>
+        where plan_id = #{planId}
+    </update>
+</mapper>
